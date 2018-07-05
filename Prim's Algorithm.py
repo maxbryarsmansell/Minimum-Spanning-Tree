@@ -1,97 +1,90 @@
-import tkinter, os, random, math
+import tkinter, os, random, math, time
 
 # Properties
 w = 800
 h = 600
-vertices = 5
+alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+maxVertices = 10
+animationDelay = 300 # ms
     
+def createGraph(maxVertices):
+    vertices = random.randint(5, maxVertices)
+    graphWeights = [math.inf] * vertices ** 2
+    graphPositions = []
+    for vertex in range(0, vertices):
+        x = random.randint(0, w)
+        y = random.randint(0, h)
+        position = [x, y]
+        graphPositions.append(position)
 
-graphWeights = [math.inf] * vertices ** 2
-graphPositions = []
-for vertex in range(0, vertices):
-    x = random.randint(0, w)
-    y = random.randint(0, h)
-    position = [x, y]
-    graphPositions.append(position)
-
-for col in range(0, vertices):
-    columnA = graphWeights[col * vertices:(col + 1) * vertices]
-    connections = 0 #len(columnA) - columnA.count(math.inf)
-    for row in range(col + 1, vertices):
-        rowA = []
-        for e in range(0, vertices):
-            rowA.append(graphWeights[row + e * vertices])
-        if (connections < 2 and math.inf in rowA):
+    for col in range(0, vertices):
+        for row in range(col + 1, vertices):
+            currentRow = []
+            connections = 0
+            for e in range(0, vertices):
+                currentRow.append(graphWeights[row + e * vertices])
+            if (currentRow.count(math.inf) > vertices - 2 and connections < 3):
                 weight = round((((graphPositions[col][0] - graphPositions[row][0]) ** 2) + ((graphPositions[col][1] - graphPositions[row][1]) ** 2) ) ** 0.5)
                 graphWeights[row + col * vertices] = weight
                 graphWeights[col + row * vertices] = weight
                 connections += 1
-
-print(graphPositions)
-print("\n")
-
-for x in range(0, vertices):
-    result = ""
-    for y in range(0, vertices):
-        result += str(graphWeights[x + y * vertices]) + ", "
-    print(result)
-
-print("\n")
+    return [graphWeights, graphPositions, vertices]
 
 
 def Prims(graph):
-    verts = int(len(graph) ** 0.5)
-    spanningTree = [math.inf] * verts ** 2
+    spanningTreePositions = graph[1]
+    verts = graph[2]
+    spanningTreeWeights = [math.inf] * verts ** 2
     openNodes = [0]
     while (len(openNodes) < verts):
         smallest = math.inf
         smallestYIndex = -1
         smallestXIndex = -1
         for i in range(0, len(openNodes)):
-            
-            column = graph[ (openNodes[i] * verts) : ((openNodes[i] + 1) * verts)]
-            #print("OpenNodes value: ",openNodes[i])
-            #print("Colunm: ", column)
+            column = graph[0][ (openNodes[i] * verts) : ((openNodes[i] + 1) * verts)]
             for j in range(0, len(column)):
                 value = column[j]
                 if (value < smallest and j not in openNodes):
                     smallest = value
-                    #print("Value: ",value,"I: ",openNodes[i],"J: ",j)
                     smallestYIndex = j
                     smallestXIndex = openNodes[i]
-        #print(smallestXIndex, ", ", smallestYIndex)
         openNodes.append(smallestYIndex)
-        #print(openNodes)
-        spanningTree[smallestYIndex + smallestXIndex * verts] = smallest
-        spanningTree[smallestXIndex + smallestYIndex * verts] = smallest
-    return spanningTree
-                      
-tree = Prims(graphWeights)      
-                
+        spanningTreeWeights[smallestYIndex + smallestXIndex * verts] = smallest
+        spanningTreeWeights[smallestXIndex + smallestYIndex * verts] = smallest
+        window.update()
+        window.update_idletasks()
+        canvas.delete("all")
+        drawGraph(graph, "blue")
+        drawGraph([spanningTreeWeights, spanningTreePositions, verts], "red")
+        time.sleep(animationDelay / 1000)
+    return [spanningTreeWeights, spanningTreePositions , verts]
+                           
+def drawGraph(graph, colour):
+    for col in range(0, graph[2]):
+        for row in range(col + 1, graph[2]):
+            if (graph[0][row + col * graph[2]] != math.inf):
+                canvas.create_line(graph[1][col][0], graph[1][col][1], graph[1][row][0], graph[1][row][1], fill=colour, width=8)
+                canvas.create_text((graph[1][col][0] + graph[1][row][0]) / 2,(graph[1][col][1] + graph[1][row][1]) / 2,fill="white",font="Helvetica 15 bold", text=graph[0][row + col * graph[2]])
+        
+        canvas.create_oval(graph[1][col][0]-10, graph[1][col][1]-10, graph[1][col][0]+10, graph[1][col][1]+10, fill=colour)
+        canvas.create_text(graph[1][col][0],graph[1][col][1],fill="white",font="Helvetica 20 bold", text=alphabet[col])
+
 
 window = tkinter.Tk()
 window.title("Spanning Tree")
 canvas = tkinter.Canvas(window, bg="black", height=h, width=w)
 canvas.pack()
 
-alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+graph = createGraph(maxVertices)
 
-for col in range(0, vertices):
-    canvas.create_oval(graphPositions[col][0]-10, graphPositions[col][1]-10, graphPositions[col][0]+10, graphPositions[col][1]+10, fill='blue')
-    for row in range(col + 1, vertices):
-        if (graphWeights[row + col * vertices] != math.inf):
-            canvas.create_line(graphPositions[col][0], graphPositions[col][1], graphPositions[row][0], graphPositions[row][1], fill='blue', width=8)
-            canvas.create_text((graphPositions[col][0] + graphPositions[row][0]) / 2,(graphPositions[col][1] + graphPositions[row][1]) / 2,fill="white",font="Helvetica 15 bold", text=graphWeights[row + col * vertices])
+Prims(graph) 
 
-for col in range(0, vertices):
-    for row in range(col + 1, vertices):
-        if (tree[row + col * vertices] != math.inf):
-            canvas.create_line(graphPositions[col][0], graphPositions[col][1], graphPositions[row][0], graphPositions[row][1], fill='red', width=5)
-            canvas.create_text((graphPositions[col][0] + graphPositions[row][0]) / 2,(graphPositions[col][1] + graphPositions[row][1]) / 2,fill="yellow",font="Helvetica 15 bold", text=graphWeights[row + col * vertices])
-    canvas.create_oval(graphPositions[col][0]-5, graphPositions[col][1]-5, graphPositions[col][0]+5, graphPositions[col][1]+5, fill='red')
-    canvas.create_text(graphPositions[col][0],graphPositions[col][1],fill="white",font="Helvetica 20 bold", text=alphabet[col])
+    
 
 
-window.mainloop()
+
+
+
+    
 
 
