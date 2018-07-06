@@ -77,7 +77,9 @@ canvas.pack()
 
 graph = createGraph(maxVertices)
 
-Prims(graph) 
+Prims(graph)
+
+window.mainloop()
 
     
 
